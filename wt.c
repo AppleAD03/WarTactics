@@ -13,7 +13,7 @@ typedef struct Unit{
 }Unit;
 
 void fight(Unit *t1, Unit *t2, ui *num1, ui *num2);
-uint8_t tournament(Unit *t1, Unit *t2);
+char tournament(Unit *t1, Unit *t2);
 
 int main(){
 	#include "UnitSpec.h"
@@ -36,8 +36,8 @@ int main(){
 		while(ii<3){
 			Unit t1[5] = {u[i], u[j], u[k], u[l], u[m]};
 			Unit t2[5] = {u[ii], u[jj], u[kk], u[ll], u[mm]};
-			uint8_t score = tournament(t1, t2);
-			fwrite(&score, sizeof(uint8_t), 1, f);
+			char score = tournament(t1, t2);
+			fwrite(&score, sizeof(char), 1, f);
 		ii++;}
 		jj++;}
 		kk++;}
@@ -50,7 +50,59 @@ int main(){
 	}
 	printf("Exact bytes written: %ld\n", ftell(f));
 	fclose(f);
-	printf("file written and closed");
+	printf("file written and closed\n");
+	f = fopen("wt.dat", "rb");
+	FILE *f2 = fopen("wtsum.dat", "wb");
+	ui tpf = 3*3*3*3*3; //tpf: three power five
+	for(ui i=0;i<tpf;i++){
+		int valsum = 0;
+		ui seeksum = 0;
+		for(ui j=0;j<i;j++){
+			fseek(f, seeksum, SEEK_SET);
+			fseek(f, i-j, SEEK_CUR);
+			char val;
+			fread(&val, sizeof(char), 1, f);
+			valsum -= val;
+			seeksum+= tpf - j;
+		}
+		fseek(f, seeksum, SEEK_SET);
+		for(ui j=0;j<(tpf-i);j++){
+			char val;
+			fread(&val, sizeof(char), 1, f);
+			valsum += val;
+		}
+		fwrite(&valsum, sizeof(int), 1, f2);
+	}
+	fclose(f2);
+	fclose(f);
+	f = fopen("wtsum.dat", "rb");
+	int highest=-243;
+	uint8_t team[5];
+	for(int m=0;m<3;m++){
+	for(int l=0;l<3;l++){
+	for(int k=0;k<3;k++){
+	for(int j=0;j<3;j++){
+	for(int i=0;i<3;i++){
+		ui seek = m*(3*3*3*3)+ l*(3*3*3)+ k*(3*3)+ j*(3)+ i;
+		fseek(f, seek * sizeof(int), SEEK_SET);
+		int netval;
+		fread(&netval, sizeof(int), 1, f);
+		if(netval>highest){
+			highest = netval;
+			team[0] = i;
+			team[1] = j;
+			team[2] = k;
+			team[3] = l;
+			team[4] = m;
+		}
+	}
+	}
+	}
+	}
+	}
+	fclose(f);
+	printf("worth = %d\n",highest);
+	for(int i=0; i<5;i++) printf("%d, ",team[i]);
 	return 0;
 }
 
@@ -67,13 +119,13 @@ void fight(Unit *t1, Unit *t2, ui *num1, ui *num2){
 	if(t2[5-(*num2)].h<=0) --(*num2);
 }
 
-uint8_t tournament(Unit *t1, Unit *t2){
+char tournament(Unit *t1, Unit *t2){
 	ui num1=5;
 	ui num2=5;
 	while(true){
 		fight(t1, t2, &num1, &num2);
-		if((num1==0) && (num2 >0)) return 0;
-		if((num1 >0) && (num2==0)) return 1;
-		if((num1==0) && (num2==0)) return 2;
+		if((num1==0) && (num2 >0)) return -1;
+		if((num1 >0) && (num2==0)) return  1;
+		if((num1==0) && (num2==0)) return  0;
 	}
 }
